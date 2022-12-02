@@ -15,6 +15,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  StringBuffer _logBuffer = StringBuffer();
 
   @override
   void initState() {
@@ -22,19 +23,21 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
+
+    try {
+      LogcatMonitor.addListen(_listenStream);
+    } on PlatformException {
+      platformVersion = 'Failed to get platform version.';
+    }
+
     try {
       platformVersion = await LogcatMonitor.platformVersion;
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
@@ -42,15 +45,67 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void _listenStream(dynamic value) {
+    debugPrint("Received From Native:  $value\n");
+    if (value is String) {
+      setState(() {
+        _logBuffer.writeln(value);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Logcat Monitor example app'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Running on:  $_platformVersion\n'),
+            Text("Logcat log:"),
+            logboxBuild(context),
+            TextButton(
+                onPressed: () async {
+                  await LogcatMonitor.platformVersion;
+                },
+                child: Text("logcat test"),
+                style: TextButton.styleFrom(
+                    elevation: 2, backgroundColor: Colors.amber[100])),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget logboxBuild(BuildContext context) {
+    return Expanded(
+      child: Center(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            border: Border.all(
+              color: Colors.blueAccent,
+              width: 1.0,
+            ),
+          ),
+          child: Scrollbar(
+            thickness: 10,
+            radius: Radius.circular(20),
+            child: SingleChildScrollView(
+              reverse: true,
+              scrollDirection: Axis.vertical,
+              child: Text(
+                _logBuffer.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.0,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
