@@ -1,21 +1,18 @@
 package com.example.logcat_monitor;
 
 import androidx.annotation.NonNull;
+import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.AsyncTask;
-import android.app.Activity;
+import android.os.SystemClock;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import android.util.Log;
-import java.util.Date;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.text.SimpleDateFormat;
-
-// import com.google.android.gms.tasks.Tasks;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.EventChannel;
@@ -30,12 +27,16 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 	private static final String TAG_NAME = "LogcatMonPlugin";
 
 	private Executor logcatExecutor = Executors.newSingleThreadExecutor();
+	private Handler uiThreadHandler = new Handler(Looper.getMainLooper());
 	private MethodChannel channel;
 	private EventChannel eventChannel;
 	private EventChannel.EventSink eventSink;
-	private int count = 0;
+	private String logcatOptions;
+	private Process logcatProcess;
 
-	private Handler uiThreadHandler = new Handler(Looper.getMainLooper());
+	private long sleepIntervalThread = 1000;
+	private long sleepTimeThread = 200;
+	private int count = 0;
 
 	@Override
 	public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -47,56 +48,29 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 	}
 
 	@Override
-	public void onMethodCall(@NonNull MethodCall call, final @NonNull Result result) {
+	public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
 
 		switch (call.method) {
 
 			case "getPlatformVersion":
+				Log.d(TAG_NAME, "run getPlatformVersion()");
 				result.success("Android " + android.os.Build.VERSION.RELEASE);
 				break;
 
-			case "testEvent":
-				result.success(true);
-				if (eventSink != null) {
-					count++;
-					String date = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss.SSS] ").format(new Date());
-					eventSink.success(date + "Event received from native java " + count);
-				}
-				break;
-
 			case "startMonitor":
-				// Tasks.call(logcatExecutor, logcatMonitorThread);
-				Log.d(TAG_NAME, "ANTES DO logcatMonitorThread");
-
-				// runOnUiThread(() -> {
-				// logcatMonitor();
-				// // result.success(true);
-				// });
-
-				// runOnUiThread(new Runnable() {
-				// @Override
-				// public void run() {
-				// logcatMonitor();
-				// }
-				// });
-
-				// new Thread(new Runnable() {
-				// public void run() {
-				// try {
-				// Thread.sleep(1000);
-				// logcatMonitor();
-				// } catch (InterruptedException e) {
-				// e.printStackTrace();
-				// }
-				// // result.success("Good morning!");
-				// }
-				// }).start();
-
-				// logcatMonitor();
-				// logcatMonitorThread();
-				logcatMonitorThread2();
-				Log.d(TAG_NAME, "DEPOIS DO logcatMonitorThread");
-				// result.success(true);
+				if (logcatProcess != null) {
+					Log.d(TAG_NAME, "close previous Monitor");
+					logcatProcess.destroyForcibly();
+					logcatProcess = null;
+				}
+				Log.d(TAG_NAME, "run startMonitor()");
+				String options = call.argument("options");
+				if (options != null && options.length() > 0) {
+					logcatOptions = options;
+					Log.d(TAG_NAME, "logcatOptions=" + options);
+				}
+				logcatMonitorThread();
+				result.success(true);
 				break;
 
 			default:
@@ -122,20 +96,6 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 	}
 
 	public void logcatMonitorThread() {
-		Thread t = new Thread(new Runnable() {
-			public void run() {
-				new Handler(Looper.getMainLooper()).post(new Runnable() {
-					@Override
-					public void run() {
-						logcatMonitor();
-					}
-				});
-			}
-		});
-		t.start();
-	}
-
-	public void logcatMonitorThread2() {
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
@@ -148,7 +108,35 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 				super.onPostExecute(result);
 			}
 		}.execute();
+	}
 
+	public void logcatMonitor() {
+		String logcatCmd = "logcat";
+		try {
+			if (logcatOptions != null && logcatOptions.length() > 0) {
+				logcatCmd = "logcat " + logcatOptions;
+			}
+			Log.d(TAG_NAME, "run command: " + logcatCmd);
+			logcatProcess = Runtime.getRuntime().exec(logcatCmd);
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()));
+			// process.destroyForcibly();
+
+			String line;
+			long startTime = SystemClock.elapsedRealtime();
+			while ((line = bufferedReader.readLine()) != null) {
+				long timeInterval = SystemClock.elapsedRealtime() - startTime;
+				if (timeInterval > sleepIntervalThread)
+					Thread.sleep(sleepTimeThread);
+				sendEvent(line);
+				startTime = SystemClock.elapsedRealtime();
+			}
+
+		} catch (IOException e) {
+			sendEvent("EXCEPTION" + e.toString());
+		} catch (InterruptedException e) {
+			sendEvent("EXCEPTION" + e.toString());
+		}
+		Log.d(TAG_NAME, "closed command: " + logcatCmd);
 	}
 
 	public void sendEvent(final String message) {
@@ -161,25 +149,4 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 				});
 	}
 
-	public void logcatMonitor() {
-		try {
-			// String logcatCmd = "logcat | grep -i 'flutter\\|FlutterMainActivity\\|AoaLibPlugin\\|BootImageRepository\\|DiagnosticRepository\\|UefiAccessory\\|LogcatMonPlugin'";
-			String logcatCmd = "logcat";
-			Process process = Runtime.getRuntime().exec(logcatCmd);
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-			String line;
-			while ((line = bufferedReader.readLine()) != null) {
-				sendEvent(line);
-				// Thread.sleep(10);
-			}
-			Thread.sleep(100);
-
-		} catch (IOException e) {
-			sendEvent("EXCEPTION" + e.toString());
-		} catch (InterruptedException e) {
-			sendEvent("EXCEPTION" + e.toString());
-		}
-
-	}
 }

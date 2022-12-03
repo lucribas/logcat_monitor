@@ -46,7 +46,6 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _listenStream(dynamic value) {
-    // debugPrint("Received From Native:  $value\n");
     if (value is String) {
       setState(() {
         _logBuffer.writeln(value);
@@ -67,28 +66,35 @@ class _MyAppState extends State<MyApp> {
             Text('Running on:  $_platformVersion\n'),
             Text("Logcat log:"),
             logboxBuild(context),
-            // TextButton(
-            //     onPressed: () async {
-            //       await LogcatMonitor.testEvent;
-            //     },
-            //     child: Text("testEvent"),
-            //     style: TextButton.styleFrom(
-            //         elevation: 2, backgroundColor: Colors.amber[100])),
+            Row(
+              children: [
+                TextButton(
+                    child: Text(
+                        "run Monitor: flutter\nand LogcatMonPlugin TAGs ONLY"),
+                    onPressed: () async {
+                      _logBuffer.clear();
+                      await LogcatMonitor.startMonitor(
+                          "flutter:*,LogcatMonPlugin:*,*:S");
+                    },
+                    style: TextButton.styleFrom(
+                        elevation: 2, backgroundColor: Colors.amber[100])),
+                TextButton(
+                    child: Text("run Monitor: ALL tags"),
+                    onPressed: () async {
+                      _logBuffer.clear();
+                      await LogcatMonitor.startMonitor("*.*");
+                    },
+                    style: TextButton.styleFrom(
+                        elevation: 2, backgroundColor: Colors.amber[200])),
+              ],
+            ),
             TextButton(
-                onPressed: () async {
-                  await LogcatMonitor.startMonitor;
-                },
-                child: Text("startMonitor"),
-                style: TextButton.styleFrom(
-                    elevation: 2, backgroundColor: Colors.amber[100])),
-            TextButton(
+                child: Text("call debugPrint"),
                 onPressed: () async {
                   await debugPrint("called debugPrint from flutter!");
                 },
-                child: Text("call debugPrint"),
                 style: TextButton.styleFrom(
                     elevation: 2, backgroundColor: Colors.amber[100])),
-
           ],
         ),
       ),
