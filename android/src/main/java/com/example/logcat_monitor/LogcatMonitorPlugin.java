@@ -73,8 +73,6 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 				// // result.success(true);
 				// });
 
-
-
 				// runOnUiThread(new Runnable() {
 				// @Override
 				// public void run() {
@@ -153,41 +151,34 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 
 	}
 
-
-	public void ppost(final String message) {
-	uiThreadHandler.post(
-		new Runnable() {
-			@Override
-			public void run() {
-				eventSink.success(message);
-			}
-		});
+	public void sendEvent(final String message) {
+		uiThreadHandler.post(
+				new Runnable() {
+					@Override
+					public void run() {
+						eventSink.success(message);
+					}
+				});
 	}
 
 	public void logcatMonitor() {
 		try {
-			// String logcatCmd = "logcat | grep -i
-			// 'flutter\\|FlutterMainActivity\\|AoaLibPlugin\\|BootImageRepository\\|DiagnosticRepository\\|UefiAccessory'";
-			// String logcatCmd = "ls";
+			// String logcatCmd = "logcat | grep -i 'flutter\\|FlutterMainActivity\\|AoaLibPlugin\\|BootImageRepository\\|DiagnosticRepository\\|UefiAccessory\\|LogcatMonPlugin'";
 			String logcatCmd = "logcat";
-			// String logcatCmd = "logcat -d";
 			Process process = Runtime.getRuntime().exec(logcatCmd);
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
 			String line;
-			ppost("prepare..");
 			while ((line = bufferedReader.readLine()) != null) {
-				ppost(line);
-				Log.d(TAG_NAME, "LINE===>" + line);
-				Thread.sleep(10);
+				sendEvent(line);
+				// Thread.sleep(10);
 			}
 			Thread.sleep(100);
-			ppost("ended");
 
 		} catch (IOException e) {
-			ppost("EXCEPTION" + e.toString());
+			sendEvent("EXCEPTION" + e.toString());
 		} catch (InterruptedException e) {
-			ppost("EXCEPTION" + e.toString());
+			sendEvent("EXCEPTION" + e.toString());
 		}
 
 	}

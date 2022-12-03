@@ -46,7 +46,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _listenStream(dynamic value) {
-    debugPrint("Received From Native:  $value\n");
+    // debugPrint("Received From Native:  $value\n");
     if (value is String) {
       setState(() {
         _logBuffer.writeln(value);
@@ -67,13 +67,13 @@ class _MyAppState extends State<MyApp> {
             Text('Running on:  $_platformVersion\n'),
             Text("Logcat log:"),
             logboxBuild(context),
-            TextButton(
-                onPressed: () async {
-                  await LogcatMonitor.testEvent;
-                },
-                child: Text("testEvent"),
-                style: TextButton.styleFrom(
-                    elevation: 2, backgroundColor: Colors.amber[100])),
+            // TextButton(
+            //     onPressed: () async {
+            //       await LogcatMonitor.testEvent;
+            //     },
+            //     child: Text("testEvent"),
+            //     style: TextButton.styleFrom(
+            //         elevation: 2, backgroundColor: Colors.amber[100])),
             TextButton(
                 onPressed: () async {
                   await LogcatMonitor.startMonitor;
@@ -81,6 +81,14 @@ class _MyAppState extends State<MyApp> {
                 child: Text("startMonitor"),
                 style: TextButton.styleFrom(
                     elevation: 2, backgroundColor: Colors.amber[100])),
+            TextButton(
+                onPressed: () async {
+                  await debugPrint("called debugPrint from flutter!");
+                },
+                child: Text("call debugPrint"),
+                style: TextButton.styleFrom(
+                    elevation: 2, backgroundColor: Colors.amber[100])),
+
           ],
         ),
       ),
