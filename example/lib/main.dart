@@ -69,9 +69,16 @@ class _MyAppState extends State<MyApp> {
             logboxBuild(context),
             TextButton(
                 onPressed: () async {
-                  await LogcatMonitor.platformVersion;
+                  await LogcatMonitor.testEvent;
                 },
-                child: Text("logcat test"),
+                child: Text("testEvent"),
+                style: TextButton.styleFrom(
+                    elevation: 2, backgroundColor: Colors.amber[100])),
+            TextButton(
+                onPressed: () async {
+                  await LogcatMonitor.startMonitor;
+                },
+                child: Text("startMonitor"),
                 style: TextButton.styleFrom(
                     elevation: 2, backgroundColor: Colors.amber[100])),
           ],

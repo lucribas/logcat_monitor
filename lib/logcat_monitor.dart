@@ -20,5 +20,14 @@ class LogcatMonitor {
     return version;
   }
 
+  static Future<bool> get testEvent async {
+    final bool result = await _channel.invokeMethod('testEvent');
+    return result;
+  }
+
+  static Future<bool> get startMonitor async {
+    final bool result = await _channel.invokeMethod('startMonitor');
+    return result;
+  }
 
 }
