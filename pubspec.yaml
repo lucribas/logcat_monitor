@@ -1,8 +1,7 @@
 name: logcat_monitor
-description: A new flutter plugin project.
+description: Flutter plugin to monitor the stream of system messages, stack traces etc using logcat command-line tool.
 version: 0.0.1
-author:
-homepage:
+homepage: https://github.com/lucribas/logcat_monitor
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
