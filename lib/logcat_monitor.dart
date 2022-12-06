@@ -17,14 +17,26 @@ class LogcatMonitor {
     _streamSubscription.cancel();
   }
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  static Future<bool> startMonitor(String options) async {
+    bool result = await _channel
+        .invokeMethod('startMonitor', <String, String>{'options': options});
+    return result;
   }
 
-  static Future<bool> startMonitor(String options) async {
-    bool result = await _channel.invokeMethod('startMonitor',
-        <String, String>{'options': options});
+  static Future<bool> stopMonitor() async {
+    bool result = await _channel.invokeMethod('stopMonitor');
+    return result;
+  }
+
+  static Future<String> get getLogcatDump async {
+    final String result = await _channel
+        .invokeMethod('runLogcat', <String, String>{'options': "-d"});
+    return result;
+  }
+
+  static Future<String> get clearLogcat async {
+    final String result = await _channel
+        .invokeMethod('runLogcat', <String, String>{'options': "-c"});
     return result;
   }
 }

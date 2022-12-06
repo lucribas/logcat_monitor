@@ -4,3 +4,9 @@ Flutter plugin to monitor the stream of system messages, stack traces etc using 
 
 
 
+# example
+
+
+<img src="file//:../../../doc/example1.png" style="height:100%;" />
+
+

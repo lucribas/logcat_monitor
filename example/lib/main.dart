@@ -14,8 +14,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
   StringBuffer _logBuffer = StringBuffer();
+  int _groupValue = 0;
 
   @override
   void initState() {
@@ -24,32 +24,23 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> initPlatformState() async {
-    String platformVersion;
-
     try {
       LogcatMonitor.addListen(_listenStream);
     } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      debugPrint('Failed to listen Stream of log.');
     }
-
-    try {
-      platformVersion = await LogcatMonitor.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    await LogcatMonitor.startMonitor("*.*");
   }
 
   void _listenStream(dynamic value) {
     if (value is String) {
-      setState(() {
+      if (mounted) {
+        setState(() {
+          _logBuffer.writeln(value);
+        });
+      } else {
         _logBuffer.writeln(value);
-      });
+      }
     }
   }
 
@@ -61,40 +52,54 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Logcat Monitor example app'),
         ),
         body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Running on:  $_platformVersion\n'),
             Text("Logcat log:"),
             logboxBuild(context),
-            Row(
+            Column(
               children: [
-                TextButton(
-                    child: Text(
-                        "run Monitor: flutter\nand LogcatMonPlugin TAGs ONLY"),
-                    onPressed: () async {
+                RadioListTile(
+                  title: Text("logcat filter: *.*"),
+                  value: 0,
+                  groupValue: _groupValue,
+                  onChanged: (value) async {
+                    setState(() {
+                      _groupValue = value;
                       _logBuffer.clear();
-                      await LogcatMonitor.startMonitor(
-                          "flutter:*,LogcatMonPlugin:*,*:S");
-                    },
-                    style: TextButton.styleFrom(
-                        elevation: 2, backgroundColor: Colors.amber[100])),
-                TextButton(
-                    child: Text("run Monitor: ALL tags"),
-                    onPressed: () async {
+                    });
+                    await LogcatMonitor.startMonitor("*.*");
+                  },
+                ),
+                RadioListTile(
+                  title: Text("logcat filter: flutter,LogcatMonPlugin,S:*"),
+                  value: 1,
+                  groupValue: _groupValue,
+                  onChanged: (value) async {
+                    setState(() {
+                      _groupValue = value;
                       _logBuffer.clear();
-                      await LogcatMonitor.startMonitor("*.*");
-                    },
-                    style: TextButton.styleFrom(
-                        elevation: 2, backgroundColor: Colors.amber[200])),
+                    });
+                    await LogcatMonitor.startMonitor(
+                        "flutter:*,LogcatMonPlugin:*,*:S");
+                  },
+                ),
               ],
             ),
             TextButton(
-                child: Text("call debugPrint"),
-                onPressed: () async {
-                  await debugPrint("called debugPrint from flutter!");
-                },
-                style: TextButton.styleFrom(
-                    elevation: 2, backgroundColor: Colors.amber[100])),
+              child: Text("call debugPrint on flutter"),
+              onPressed: () async {
+                debugPrint("called debugPrint from flutter!");
+              },
+              style: TextButton.styleFrom(
+                  elevation: 2, backgroundColor: Colors.amber[100]),
+            ),
+            TextButton(
+              child: Text("Clear"),
+              onPressed: () async {
+                clearLog();
+              },
+              style: TextButton.styleFrom(
+                  elevation: 2, backgroundColor: Colors.amber[100]),
+            ),
           ],
         ),
       ),
@@ -131,4 +136,14 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+
+  void clearLog() async {
+    LogcatMonitor.clearLogcat;
+    await Future.delayed(const Duration(milliseconds: 100));
+    setState(() {
+      _logBuffer.clear();
+      _logBuffer.writeln("log buffer cleared");
+    });
+  }
+
 }

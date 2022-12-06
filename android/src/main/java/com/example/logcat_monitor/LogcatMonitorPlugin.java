@@ -25,18 +25,15 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler {
 
 	private static final String TAG_NAME = "LogcatMonPlugin";
+	private static final long sleepIntervalThread = 1000;
+	private static final long sleepTimeThread = 200;
 
 	private Executor logcatExecutor = Executors.newSingleThreadExecutor();
 	private Handler uiThreadHandler = new Handler(Looper.getMainLooper());
 	private MethodChannel channel;
 	private EventChannel eventChannel;
 	private EventChannel.EventSink eventSink;
-	private String logcatOptions;
 	private Process logcatProcess;
-
-	private long sleepIntervalThread = 1000;
-	private long sleepTimeThread = 200;
-	private int count = 0;
 
 	@Override
 	public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -49,33 +46,55 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 
 	@Override
 	public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+		String options;
+		StringBuffer log = new StringBuffer();
+		boolean previousIsRunning = (logcatProcess != null);
+
+		options = call.argument("options");
+		if (options == null || options.length() < 1) {
+			options = "";
+		}
 
 		switch (call.method) {
-
-			case "getPlatformVersion":
-				Log.d(TAG_NAME, "run getPlatformVersion()");
-				result.success("Android " + android.os.Build.VERSION.RELEASE);
+			case "startMonitor":
+				closePrevious();
+				Log.d(TAG_NAME, "run startMonitor()");
+				logcatMonitorThread(options);
+				result.success(true);
 				break;
 
-			case "startMonitor":
-				if (logcatProcess != null) {
-					Log.d(TAG_NAME, "close previous Monitor");
-					logcatProcess.destroyForcibly();
-					logcatProcess = null;
-				}
-				Log.d(TAG_NAME, "run startMonitor()");
-				String options = call.argument("options");
-				if (options != null && options.length() > 0) {
-					logcatOptions = options;
-					Log.d(TAG_NAME, "logcatOptions=" + options);
-				}
-				logcatMonitorThread();
+			case "stopMonitor":
+				Log.d(TAG_NAME, "run stopMonitor()");
+				closePrevious();
 				result.success(true);
+				break;
+
+			case "runLogcat":
+				Log.d(TAG_NAME, "run runLogcat(" + options + ")");
+				try {
+					String cmd = "logcat " + options;
+					Process process = Runtime.getRuntime().exec(cmd);
+					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+					String line;
+					while ((line = bufferedReader.readLine()) != null) {
+						log.append(line);
+					}
+				} catch (IOException e) {
+					log.append("EXCEPTION" + e.toString());
+				}
+				result.success(log.toString());
 				break;
 
 			default:
 				result.notImplemented();
 				return;
+		}
+	}
+
+	private void closePrevious() {
+		if (logcatProcess != null) {
+			logcatProcess.destroyForcibly();
+			logcatProcess = null;
 		}
 	}
 
@@ -95,11 +114,11 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 		this.eventSink = null;
 	}
 
-	public void logcatMonitorThread() {
+	public void logcatMonitorThread(final String logcatOptions) {
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
-				logcatMonitor();
+				logcatMonitor(logcatOptions);
 				return null;
 			}
 
@@ -110,16 +129,12 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 		}.execute();
 	}
 
-	public void logcatMonitor() {
-		String logcatCmd = "logcat";
+	public void logcatMonitor(String logcatOptions) {
+		String logcatCmd = "logcat " + logcatOptions;
 		try {
-			if (logcatOptions != null && logcatOptions.length() > 0) {
-				logcatCmd = "logcat " + logcatOptions;
-			}
-			Log.d(TAG_NAME, "run command: " + logcatCmd);
+			Log.d(TAG_NAME, "running command: " + logcatCmd);
 			logcatProcess = Runtime.getRuntime().exec(logcatCmd);
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()));
-			// process.destroyForcibly();
 
 			String line;
 			long startTime = SystemClock.elapsedRealtime();
@@ -134,7 +149,7 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 		} catch (IOException e) {
 			sendEvent("EXCEPTION" + e.toString());
 		} catch (InterruptedException e) {
-			sendEvent("EXCEPTION" + e.toString());
+			sendEvent("logcatMonitor interrupted");
 		}
 		Log.d(TAG_NAME, "closed command: " + logcatCmd);
 	}
@@ -148,5 +163,4 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 					}
 				});
 	}
-
 }
