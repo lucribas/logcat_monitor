@@ -145,5 +145,4 @@ class _MyAppState extends State<MyApp> {
       _logBuffer.writeln("log buffer cleared");
     });
   }
-
 }
