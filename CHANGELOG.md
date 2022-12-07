@@ -1,3 +1,7 @@
+## 0.0.5
+
+* Update to null-safety
+
 ## 0.0.4
 
 * Update documentation
