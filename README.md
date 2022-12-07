@@ -35,14 +35,18 @@ Follows a screenshot of example code in [example](https://github.com/lucribas/lo
 
 Here we use a StringBuffer to store the messages and display them in the log screen.
 
-<img src="[file//:../../../doc/example1.png](https://raw.githubusercontent.com/lucribas/logcat_monitor/main/doc/example1.jpg)" style="height:70%;" />
-
+<p align='center'>
+    <img src="https://raw.githubusercontent.com/lucribas/logcat_monitor/main/doc/example1.jpg" />
+</p>
 
 # under the hood
 
 The LogcatMonitorPlugin runs event/method channel handlers in **UI-thread** and the *logcat* process monitor in a **background thread** as recomended by Google to not block the UI interface.
 
-<img src="[file//:../../../doc/diagram.png](https://raw.githubusercontent.com/lucribas/logcat_monitor/main/doc/diagram.png)" style="height:100%;" />
+<p align='center'>
+    <img src="https://raw.githubusercontent.com/lucribas/logcat_monitor/main/doc/diagram.png" />
+</p>
+
 
 ### logcat filter options
 
