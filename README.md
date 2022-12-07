@@ -27,6 +27,11 @@ NOTE: This plugin fetches logs only on Android Devices presently.
 
 ## Installation
 
+Need permission in AndroidManifest.xml:
+```xml
+<uses-permission android:name="android.permission.READ_LOGS" />
+```
+
 [https://pub.dev/packages/logcat_monitor/install](https://pub.dev/packages/logcat_monitor/install)
 
 # example
