@@ -39,4 +39,3 @@ package example {
 
 ```
 
-LogcatMonitorPlugin runs event/method channel handlers in UI-thread as recomended by Google to not block the UI.
