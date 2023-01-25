@@ -77,7 +77,7 @@ public class LogcatMonitorPlugin implements FlutterPlugin, MethodCallHandler, Ev
 					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 					String line;
 					while ((line = bufferedReader.readLine()) != null) {
-						log.append(line);
+						log.append(line + "\n");
 					}
 				} catch (IOException e) {
 					log.append("EXCEPTION" + e.toString());
