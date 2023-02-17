@@ -51,85 +51,88 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Logcat Monitor example app'),
         ),
-        body: Column(
-          children: [
-            Text("Logcat log:"),
-            logboxBuild(context),
-            Column(
-              children: [
-                RadioListTile(
-                  title: Text("logcat filter: *.*"),
-                  value: 0,
-                  groupValue: _groupValue,
-                  onChanged: (value) async {
-                    setState(() {
-                      _groupValue = value;
-                      _logBuffer.clear();
-                    });
-                    await LogcatMonitor.startMonitor("*.*");
-                  },
-                ),
-                RadioListTile(
-                  title: Text("logcat filter: flutter,LogcatMonPlugin,S:*"),
-                  value: 1,
-                  groupValue: _groupValue,
-                  onChanged: (value) async {
-                    setState(() {
-                      _groupValue = value;
-                      _logBuffer.clear();
-                    });
-                    await LogcatMonitor.startMonitor(
-                        "flutter:*,LogcatMonPlugin:*,*:S");
-                  },
-                ),
-              ],
-            ),
-            TextButton(
-              child: Text("call debugPrint on flutter"),
-              onPressed: () async {
-                debugPrint("called debugPrint from flutter!");
-              },
-              style: TextButton.styleFrom(
-                  elevation: 2, backgroundColor: Colors.amber[100]),
-            ),
-            TextButton(
-              child: Text("Clear"),
-              onPressed: () async {
-                clearLog();
-              },
-              style: TextButton.styleFrom(
-                  elevation: 2, backgroundColor: Colors.amber[100]),
-            ),
-          ],
+        body: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text("Logcat log:"),
+              SizedBox(height: 10),
+              Expanded(
+                child: logboxBuild(context),
+              ),
+              SizedBox(height: 10),
+              Column(
+                children: [
+                  RadioListTile(
+                    title: Text("logcat filter: *.*"),
+                    value: 0,
+                    groupValue: _groupValue,
+                    onChanged: (value) async {
+                      setState(() {
+                        _groupValue = value;
+                        _logBuffer.clear();
+                      });
+                      await LogcatMonitor.startMonitor("*.*");
+                    },
+                  ),
+                  RadioListTile(
+                    title: Text("logcat filter: flutter,LogcatMonPlugin,S:*"),
+                    value: 1,
+                    groupValue: _groupValue,
+                    onChanged: (value) async {
+                      setState(() {
+                        _groupValue = value;
+                        _logBuffer.clear();
+                      });
+                      await LogcatMonitor.startMonitor("flutter:*,LogcatMonPlugin:*,*:S");
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              TextButton(
+                child: Text("call debugPrint on flutter"),
+                onPressed: () async {
+                  debugPrint("called debugPrint from flutter!");
+                },
+                style: TextButton.styleFrom(elevation: 2, backgroundColor: Colors.amber[100]),
+              ),
+              TextButton(
+                child: Text("Clear"),
+                onPressed: () async {
+                  clearLog();
+                },
+                style: TextButton.styleFrom(elevation: 2, backgroundColor: Colors.amber[100]),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget logboxBuild(BuildContext context) {
-    return Expanded(
-      child: Center(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            border: Border.all(
-              color: Colors.blueAccent,
-              width: 1.0,
-            ),
-          ),
-          child: Scrollbar(
-            thickness: 10,
-            radius: Radius.circular(20),
-            child: SingleChildScrollView(
-              reverse: true,
-              scrollDirection: Axis.vertical,
-              child: Text(
-                _logBuffer.toString(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.0,
-                ),
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border.all(
+          color: Colors.blueAccent,
+          width: 1.0,
+        ),
+      ),
+      child: Scrollbar(
+        thickness: 10,
+        radius: Radius.circular(20),
+        child: SingleChildScrollView(
+          reverse: true,
+          scrollDirection: Axis.vertical,
+          child: Text(
+            _logBuffer.toString(),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14.0,
             ),
           ),
         ),
